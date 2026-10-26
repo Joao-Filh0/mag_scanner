@@ -104,52 +104,121 @@ class _ScannerPageState extends State<ScannerPage> {
     );
   }
 
+  Future<void> _typeCode() async {
+    final textController = TextEditingController();
+    final value = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Digitar código'),
+        content: TextField(
+          controller: textController,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(hintText: 'Linha digitável'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(textController.text),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+    textController.dispose();
+    if (!mounted || value == null || value.trim().isEmpty || _handled) return;
+    _handled = true;
+    Navigator.of(context).pop(
+      ScanRecord(value.trim(), BarcodeFormat.unknown, _stopwatch.elapsed),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        actions: [
-          ValueListenableBuilder(
-            valueListenable: _controller,
-            builder: (context, state, _) {
-              if (state.torchState == TorchState.unavailable) {
-                return const SizedBox.shrink();
-              }
-              return IconButton(
-                onPressed: _controller.toggleTorch,
-                icon: Icon(
-                  state.torchState == TorchState.on
-                      ? Icons.flash_on
-                      : Icons.flash_off,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          const horizontalPadding = 16.0;
+          const padding = 16.0;
           final scanWindow = Rect.fromCenter(
             center: constraints.biggest.center(Offset.zero),
-            width: constraints.maxWidth - horizontalPadding * 2,
-            height: constraints.maxWidth * 0.75 * 0.7,
+            width: constraints.maxWidth * 0.4,
+            height: constraints.maxHeight - padding * 2,
           );
-          return MagScannerView(
-            controller: _controller,
-            onDetect: _onDetect,
-            scanWindow: scanWindow,
-            overlayBuilder: (context, _) => _ScanWindowOverlay(scanWindow),
-            errorBuilder: (context, error) => Center(
-              child: Text(
-                'Erro na câmera: ${error.errorCode.name}',
-                style: const TextStyle(color: Colors.white),
+          final gutterWidth = scanWindow.left;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // No scanWindow on the scanner: like the reference, the barcode
+              // only needs to cross the red line, it can overflow the window.
+              MagScannerView(
+                controller: _controller,
+                onDetect: _onDetect,
+                errorBuilder: (context, error) => Center(
+                  child: Text(
+                    'Erro na câmera: ${error.errorCode.name}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
               ),
-            ),
+              IgnorePointer(
+                child: CustomPaint(painter: _ScanMaskPainter(scanWindow)),
+              ),
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: gutterWidth,
+                child: Center(
+                  child: RotatedBox(
+                    quarterTurns: 1,
+                    child: TextButton(
+                      onPressed: _typeCode,
+                      style: TextButton.styleFrom(
+                        foregroundColor: _accentPink,
+                      ),
+                      child: const Text(
+                        'DIGITAR CÓDIGO',
+                        style: TextStyle(fontSize: 15, letterSpacing: 0.5),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: gutterWidth,
+                child: const Center(
+                  child: RotatedBox(
+                    quarterTurns: 1,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        'Posicione o Código de Barras de suas contas sobre a '
+                        'linha vermelha e aguarde a leitura automática',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: SafeArea(
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -157,48 +226,35 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 }
 
-class _ScanWindowOverlay extends StatelessWidget {
-  const _ScanWindowOverlay(this.window);
+const _accentPink = Color(0xFFFF5A79);
 
-  final Rect window;
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: CustomPaint(
-        size: Size.infinite,
-        painter: _ScanWindowPainter(window),
-      ),
-    );
-  }
-}
-
-class _ScanWindowPainter extends CustomPainter {
-  _ScanWindowPainter(this.window);
+/// Dark mask with a rounded vertical window and a red line along its center.
+class _ScanMaskPainter extends CustomPainter {
+  _ScanMaskPainter(this.window);
 
   final Rect window;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final frame = RRect.fromRectAndRadius(window, const Radius.circular(16));
+    final frame = RRect.fromRectAndRadius(window, const Radius.circular(24));
     canvas.drawPath(
       Path.combine(
         PathOperation.difference,
         Path()..addRect(Offset.zero & size),
         Path()..addRRect(frame),
       ),
-      Paint()..color = Colors.black54,
+      Paint()..color = const Color(0xD91E1E1E),
     );
-    canvas.drawRRect(
-      frame,
+    canvas.drawLine(
+      Offset(window.center.dx, window.top),
+      Offset(window.center.dx, window.bottom),
       Paint()
         ..color = Colors.red
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3,
+        ..strokeWidth = 2,
     );
   }
 
   @override
-  bool shouldRepaint(_ScanWindowPainter oldDelegate) =>
+  bool shouldRepaint(_ScanMaskPainter oldDelegate) =>
       oldDelegate.window != window;
 }
