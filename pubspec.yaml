@@ -1,16 +1,16 @@
 name: mag_scanner
-description: "A new Flutter project."
+description: "Barcode/QR scanner (mobile_scanner + native beep), same pipeline as the reference barcode app."
 version: 0.0.1
 homepage:
 
 environment:
-  sdk: ^3.12.2
-  flutter: '>=3.3.0'
+  sdk: ^3.7.0
+  flutter: '>=3.29.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  mobile_scanner: 7.2.0
+  mobile_scanner: ^7.2.0
   plugin_platform_interface: ^2.0.2
 
 dev_dependencies:
@@ -36,7 +36,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.example.mag_scanner
+        package: com.magnum.mag_scanner
         pluginClass: MagScannerPlugin
       ios:
         pluginClass: MagScannerPlugin

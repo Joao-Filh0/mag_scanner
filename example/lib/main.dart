@@ -23,8 +23,6 @@ class ScanRecord {
 
   final String value;
   final BarcodeFormat format;
-
-  /// Time from opening the scanner to this read.
   final Duration elapsed;
 }
 

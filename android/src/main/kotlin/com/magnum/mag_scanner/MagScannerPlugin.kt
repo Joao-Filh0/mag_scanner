@@ -1,4 +1,4 @@
-package com.example.mag_scanner
+package com.magnum.mag_scanner
 
 import android.media.AudioAttributes
 import android.media.SoundPool

@@ -1,4 +1,4 @@
-group = "com.example.mag_scanner"
+group = "com.magnum.mag_scanner"
 version = "1.0-SNAPSHOT"
 
 buildscript {
@@ -25,8 +25,15 @@ plugins {
     id("com.android.library")
 }
 
+// Hosts on AGP 8 (or AGP 9 with android.builtInKotlin=false) do not compile Kotlin
+// on their own, so the Kotlin Gradle plugin must be applied explicitly there.
+val agpMajorVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.substringBefore('.').toInt()
+if (agpMajorVersion < 9 || findProperty("android.builtInKotlin")?.toString() == "false") {
+    apply(plugin = "org.jetbrains.kotlin.android")
+}
+
 android {
-    namespace = "com.example.mag_scanner"
+    namespace = "com.magnum.mag_scanner"
 
     compileSdk = 36
 
@@ -66,10 +73,8 @@ android {
     }
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-    }
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+    compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
 }
 
 dependencies {
