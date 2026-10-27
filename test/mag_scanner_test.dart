@@ -38,4 +38,12 @@ void main() {
     expect(controller.cameraResolution, isNull);
     expect(controller.returnImage, isFalse);
   });
+
+  test('MagScannerView vibrates by default and only beeps when asked', () {
+    final view = MagScannerView(onDetect: (_) {});
+
+    expect(view.beep, isFalse);
+    expect(view.vibrate, isTrue);
+    expect(MagScannerView(onDetect: (_) {}, beep: true).beep, isTrue);
+  });
 }

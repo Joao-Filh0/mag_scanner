@@ -33,14 +33,14 @@ class MagScanner {
   }
 }
 
-/// Camera preview that reads barcodes, beeps and vibrates on every detection,
-/// the same flow as the reference app (`mobile_scanner` + native `playSound`).
+/// Camera preview that reads barcodes and vibrates on every detection.
+/// The native beep (`playSound`, as in the reference app) is opt-in via [beep].
 class MagScannerView extends StatefulWidget {
   const MagScannerView({
     super.key,
     required this.onDetect,
     this.controller,
-    this.beep = true,
+    this.beep = false,
     this.vibrate = true,
     this.scanWindow,
     this.overlayBuilder,
@@ -51,6 +51,7 @@ class MagScannerView extends StatefulWidget {
 
   /// When null, a controller from [MagScanner.createController] is used.
   final MobileScannerController? controller;
+  /// Plays the native beep on each detection. Off by default.
   final bool beep;
   final bool vibrate;
   final Rect? scanWindow;
